@@ -17,20 +17,9 @@ return function (App $app) {
 
     $app->get('/', function (Request $request, Response $response) {
         $response->getBody()->write('Hello world!');
-        return $response;
-        // $sql= $this->db->prepare("SELECT * FROM customers   ");
-        // $sql->execute();
-        // $data=$sql->fetchAll();
-        // return $this->response->withJson($data);
-      
+        return $response;      
     });
 
-    // $app->get('/hello/{name}', function (Request $request, Response $response,$name) {
-
-    //     $response->getBody()->write($name);
-    
-    //     return $response;
-    // });
 
     $app->group('/users', function (Group $group) {
         $group->get('', ListUsersAction::class);
@@ -38,7 +27,7 @@ return function (App $app) {
     });
 
 
-    $app->post('/customers/add', function (Request $request, Response $response) {
+    $app->post('/customers/register', function (Request $request, Response $response) {
         try{
         $input=$request->getParsedBody();
         $db = $this->get(PDO::class);
@@ -82,6 +71,45 @@ return function (App $app) {
         // return $this->response->withJson($data);
         $response->getBody()->write(json_encode($data));
         return $response->withHeader('Content-Type', 'application/json');
+    });
+
+    $app->post('/customers/login', function (Request $request, Response $response) {
+        try{
+            $input=$request->getParsedBody();
+            $db = $this->get(PDO::class);
+            $sql="SELECT * FROM customers where mob=:mob";
+            $sql= $db->prepare($sql);
+            $sql->bindParam(":mob",$input['mob']);
+            $sql->execute();
+            // $data=$sql->fetchAll();
+            $data=array(
+                "status"=>true,
+                "data"=>$sql->fetchAll()
+              );
+            $count=$sql->rowCount();
+            if($count==0){
+                $data=array(
+                    "status"=>false
+                  );
+            }
+            $payload = json_encode($data);
+            $response->getBody()->write($payload);
+            return $response->withHeader('Content-Type', 'application/json');
+            
+            }
+            catch(PDOException $e){
+    
+                $data = array(
+                    "message" => $e->getMessage(),
+                    "status"=>"error"
+                  );
+               
+                  $response->getBody()->write(json_encode($data));
+                  return $response
+                    ->withHeader('content-type', 'application/json')
+                    ->withStatus(500);
+               
+            }
     });
 
 
